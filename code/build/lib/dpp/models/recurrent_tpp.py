@@ -120,21 +120,21 @@ class RecurrentTPP(nn.Module):
         inter_time_dist = self.get_inter_time_dist(context)
         inter_times = batch.inter_times.clamp(1e-10)
         log_p = inter_time_dist.log_prob(inter_times)  # (batch_size, seq_len)
-        test = torch.exp(log_p)
+
         # Survival probability of the last interval (from t_N to t_end).
         # You can comment this section of the code out if you don't want to implement the log_survival_function
         # for the distribution that you are using. This will make the likelihood computation slightly inaccurate,
         # but the difference shouldn't be significant if you are working with long sequences.
-        last_event_idx = batch.mask.sum(-1, keepdim=True).long()  # (batch_size, 1)
-        log_surv_all = inter_time_dist.log_survival_function(inter_times)  # (batch_size, seq_len)
-        log_surv_last = torch.gather(log_surv_all, dim=-1, index=last_event_idx).squeeze(-1)  # (batch_size,)
+        # last_event_idx = batch.mask.sum(-1, keepdim=True).long()  # (batch_size, 1)
+        # log_surv_all = inter_time_dist.log_survival_function(inter_times)  # (batch_size, seq_len)
+        # log_surv_last = torch.gather(log_surv_all, dim=-1, index=last_event_idx).squeeze(-1)  # (batch_size,)
 
         if self.num_marks > 1:
             mark_logits = torch.log_softmax(self.mark_linear(context), dim=-1)  # (batch_size, seq_len, num_marks)
             mark_dist = Categorical(logits=mark_logits)
             log_p += mark_dist.log_prob(batch.marks)  # (batch_size, seq_len)
         log_p *= batch.mask  # (batch_size, seq_len)
-        return log_p.sum(-1) + log_surv_last  # (batch_size,)
+        return log_p.sum(-1) #+ log_surv_last  # (batch_size,)
 
     def sample(self, t_end: float, batch_size: int = 1, context_init: torch.Tensor = None) -> dpp.data.Batch:
         """Generate a batch of sequence from the model.
@@ -155,7 +155,6 @@ class RecurrentTPP(nn.Module):
         else:
             # Use the provided context vector
             context_init = context_init.view(self.context_size)
-        context1 = context_init[None, None, :]
         next_context = context_init[None, None, :].expand(batch_size, 1, -1)
         inter_times = torch.empty(batch_size, 0)
         if self.num_marks > 1:
@@ -165,7 +164,7 @@ class RecurrentTPP(nn.Module):
         while not generated:
             inter_time_dist = self.get_inter_time_dist(next_context)
             next_inter_times = inter_time_dist.sample()  # (batch_size, 1)
-            print(next_inter_times.shape)
+            print(next_inter_times)
             inter_times = torch.cat([inter_times, next_inter_times], dim=1)  # (batch_size, seq_len)
 
             # Generate marks, if necessary

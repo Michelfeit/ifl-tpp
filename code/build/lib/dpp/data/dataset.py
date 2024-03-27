@@ -110,8 +110,6 @@ class SequenceDataset(torch.utils.data.Dataset):
     def get_inter_time_statistics(self):
         """Get the mean and std of log(inter_time)."""
         all_inter_times = torch.cat([seq.inter_times[:-1] for seq in self.sequences])
-        print(all_inter_times[:20])
-
         mean_log_inter_time = all_inter_times.log().mean()
         std_log_inter_time = all_inter_times.log().std()
         return mean_log_inter_time, std_log_inter_time

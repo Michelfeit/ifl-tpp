@@ -2,8 +2,9 @@ import dpp
 import numpy as np
 import torch
 from copy import deepcopy
-torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
+print(torch.cuda.is_available())
+torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
 # Config
 seed = 0
@@ -14,11 +15,11 @@ dataset_name = 'synth/hawkes1'  # run dpp.data.list_datasets() to see the list o
 # Model config
 context_size = 64                 # Size of the RNN hidden vector
 mark_embedding_size = 32          # Size of the mark embedding (used as RNN input)
-num_mix_components = 64           # Number of components for a mixture model
+num_mix_components = 16          # Number of components for a mixture model
 rnn_type = "GRU"                  # What RNN to use as an encoder {"RNN", "GRU", "LSTM"}
 
 # Training config
-batch_size = 64        # Number of sequences in a batch
+batch_size = 8        # Number of sequences in a batch
 regularization = 1e-5  # L2 regularization parameter
 learning_rate = 1e-3   # Learning rate for Adam optimizer
 max_epochs = 1000      # For how many epochs to train
@@ -74,6 +75,7 @@ for epoch in range(max_epochs):
     for batch in dl_train:
         opt.zero_grad()
         loss = -model.log_prob(batch).mean()
+        #print(-model.log_prob(batch), loss)
         loss.backward()
         opt.step()
 
@@ -103,6 +105,8 @@ for epoch in range(max_epochs):
 # Evaluation
 model.load_state_dict(best_model)
 model.eval()
+
+model.sample(200, batch_size)
 
 # All training & testing sequences stacked into a single batch
 with torch.no_grad():

@@ -60,6 +60,7 @@ class LogNormalMixtureDistribution(TransformedDistribution):
         """
         a = self.std_log_inter_time
         b = self.mean_log_inter_time
+        
         loc = self.base_dist._component_distribution.loc
         variance = self.base_dist._component_distribution.variance
         log_weights = self.base_dist._mixture_distribution.logits
@@ -105,6 +106,7 @@ class LogNormMix(RecurrentTPP):
         )
         self.num_mix_components = num_mix_components
         self.linear = nn.Linear(self.context_size, 3 * self.num_mix_components)
+
     def get_inter_time_dist(self, context: torch.Tensor) -> torch.distributions.Distribution:
         """
         Get the distribution over inter-event times given the context.
@@ -125,6 +127,7 @@ class LogNormMix(RecurrentTPP):
 
         log_scales = clamp_preserve_gradients(log_scales, -5.0, 3.0)
         log_weights = torch.log_softmax(log_weights, dim=-1)
+
         return LogNormalMixtureDistribution(
             locs=locs,
             log_scales=log_scales,
